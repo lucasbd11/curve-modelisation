@@ -10,118 +10,198 @@ def priority(calc, level_ = 0):
     
     calc_structured = []
     numbers = "0123456789."
-    letters = "abcdefghijklmnoqrstuvwxyz"
+    letters = "abcdefghijklmnopqrstuvwxyzABDCEFGHIJKLMNOPQRSTUVWXYZ"
     operators = "+*-/^"
     functions = ["cos","sin","exp","sqrt"]
     
     
     #level = 0
     in_progress = "none"
+    index_jump = 0
     
     for index,char in enumerate(calc):
-        
-        if char == "[":
-            in_progress = "var"
-            calc_structured += [""]
-
-        if(in_progress != "(") and in_progress != "var":
-            
-            
-            if letters.find(char) > -1:
-                if in_progress == "function":
-                    calc_structured[-1] += char
-                else:
-                    calc_structured += [char]
-                    in_progress = "function"
-            
-            
-            
-            if numbers.find(char) > -1:
-                if in_progress == "number":
-                    calc_structured[-1] += char
-                else:
-                    calc_structured += [char]
-                    in_progress = "number"
-            
-            
-            if operators.find(char) > -1:
-                calc_structured += [char]
-                in_progress = "operation"
-            
-            if char =="(":
-                in_progress = "("
-                level = 0
-                locked = False
+        if index >= index_jump:
+            if char == "[":
+                in_progress = "var"
+                calc_structured += [""]
+    
+            if(in_progress != "(") and in_progress != "var":
                 
-                for index_bis,char_bis in enumerate(calc[index:]):
-
-                    
-                    if char_bis == "(":
-                        level += 1
-                    if char_bis == ")":
-                        level -= 1
-                    
-                    if level <= 0 and locked == False:
-                        locked = True
-                        sub_calc_end = index_bis + index
                 
-                calc_structured += [priority(calc[index+1:sub_calc_end])]            
-        if char == "]":
-            in_progress = "none"       
-        if in_progress == "var" and char != "[":
-            calc_structured[-1] += char
-                   
-
-
-        
-
-        
-        #print(index,char,in_progress)
-        
-        if char ==")":
-            in_progress = ")"
+                if letters.find(char) > -1:
+                    if in_progress == "function":
+                        calc_structured[-1] += char
+                    else:
+                        calc_structured += [char]
+                        in_progress = "function"
+                
+                
+                
+                if numbers.find(char) > -1:
+                    if in_progress == "number":
+                        calc_structured[-1] += char
+                    else:
+                        calc_structured += [char]
+                        in_progress = "number"
+                
+                
+                if operators.find(char) > -1:
+                    calc_structured += [char]
+                    in_progress = "operation"
+                
+                if char =="(":
+                    in_progress = "("
+                    level = 0
+                    locked = False
+                    
+                    for index_bis,char_bis in enumerate(calc[index:]):
+    
+                        
+                        if char_bis == "(":
+                            level += 1
+                        if char_bis == ")":
+                            level -= 1
+                        
+                        if level <= 0 and locked == False:
+                            locked = True
+                            sub_calc_end = index_bis + index
+                    
+                    calc_structured += [priority(calc[index+1:sub_calc_end])]
+                    index_jump = sub_calc_end
+                            
+            if char == "]":
+                in_progress = "none"       
+            if in_progress == "var" and char != "[":
+                calc_structured[-1] += char
+                    
+    
+    
+            
+    
+            
+            #print(index,char,in_progress)
+            
+            if char ==")":
+                in_progress = ")"
         
     return calc_structured
 
 
 
-def calculate_formula(formula,*var_dict):
+def calculate_formula(formula,data_index,var_dict):
     
     temp_value = 0
     formula_bis = copy.copy(formula)
     
+    functions = ["cos","sin","exp","sqrt"]
+    vars = [i for i in var_dict]
     
-
+    
+    
     for index,value in enumerate(formula):
         if type(value) == list:
-            formula_bis[index] = calculate_formula(formula[index])
-       
-       
+            formula_bis[index] = calculate_formula(formula[index],data_index,var_dict)
+    
+    index_variation = 0
+    formula = copy.copy(formula_bis)
+
+    for index,value in enumerate(formula):
+        if value == "cos":
+            formula_bis[index-index_variation] = math.cos(float(formula_bis[index+(1-index_variation)]))
+            del formula_bis[index+(1-index_variation)]
+            index_variation +=1
+            
+        if value == "sin":
+            formula_bis[index-index_variation] = math.sin(float(formula_bis[index+(1-index_variation)]))
+            del formula_bis[index+(1-index_variation)]
+            index_variation +=1
+        
+        if value == "sqrt":
+
+            formula_bis[index-index_variation] = math.sqrt(float(formula_bis[index+(1-index_variation)]))
+            del formula_bis[index+(1-index_variation)]
+            index_variation +=1
+        
+        if value == "exp":
+            formula_bis[index-index_variation] = math.exp(float(formula_bis[index+(1-index_variation)]))
+            del formula_bis[index+(1-index_variation)]
+            index_variation +=1
+        
+        try:
+            var_index = vars.index(value)
+            
+            try:
+                formula_bis[index-index_variation] = var_dict[value][data_index]
+
+                print("valide")
+                
+            except:
+                return False
+            
+        except:
+            pass
+        
+
+
     
     formula = copy.copy(formula_bis)    
+    index_variation = 0
+    
+    
     for index,value in enumerate(formula):
         if value == "^":
-            formula_bis = formula_bis[:index-1] + [int(formula_bis[index-1])**int(formula_bis[index+1])] + formula_bis[index+2:]
+            formula_bis = formula_bis[:index-(1+index_variation)] + [float(formula_bis[index-(1+index_variation)])**float(formula_bis[index+(1-index_variation)])] + formula_bis[index+(2-index_variation):]
+            index_variation += 2
     
+    
+    index_variation = 0
     formula = copy.copy(formula_bis)
+    
+   
     
     for index,value in enumerate(formula):
         if value == "/":
-            formula_bis = formula_bis[:index-1] + [int(formula_bis[index-1])/int(formula_bis[index+1])] + formula_bis[index+2:]
+
+            formula_bis = formula_bis[:index-(1+index_variation)] + [float(formula_bis[index-(1+index_variation)])/float(formula_bis[index+(1-index_variation)])] + formula_bis[index+(2-index_variation):]
+            index_variation += 2
+        
         if value == "*":
-            formula_bis = formula_bis[:index-1] + [int(formula_bis[index-1])*int(formula_bis[index+1])] + formula_bis[index+2:]
+            
+            formula_bis = formula_bis[:index-(1+index_variation)] + [float(formula_bis[index-(1+index_variation)])*float(formula_bis[index+(1-index_variation)])] + formula_bis[index+(2-index_variation):]
+            index_variation += 2
+            
             
     formula = copy.copy(formula_bis)
-            
+    index_variation = 0
+    
     for index,value in enumerate(formula):
         if value == "+":
-            formula_bis = formula_bis[:index-1] + [int(formula_bis[index-1])+int(formula_bis[index+1])] + formula_bis[index+2:]
+            
+            formula_bis = formula_bis[:index-(1+index_variation)] + [float(formula_bis[index-(1+index_variation)])+float(formula_bis[index+(1-index_variation)])] + formula_bis[index+(2-index_variation):]
+            index_variation += 2
         if value == "-":
-            formula_bis = formula_bis[:index-1] + [int(formula_bis[index-1])-int(formula_bis[index+1])] + formula_bis[index+2:]
+            formula_bis = formula_bis[:index-(1+index_variation)] + [float(formula_bis[index-(1+index_variation)])-float(formula_bis[index+(1-index_variation)])] + formula_bis[index+(2-index_variation):]
+            index_variation += 2
     
-    return formula_bis[0]
+    
+    
+    return float(formula_bis[0])
         
     
+def calculate_var(var,var_dict):
+    formula_save = var_dict[var][0]
+    answer = 1.0
+    del var_dict[var]
+    var_dict[var] = [formula_save]
+    
+    
+    var_index = 1
+    while type(answer) == float:
+        answer = calculate_formula(priority(var_dict[var][0]),var_index,var_dict)
+        if type(answer) == float:
+            var_dict[var] += [answer]
+            var_index += 1
+    return var_dict
     
     
 
@@ -131,7 +211,7 @@ def menu(options_list):
     answer = int(input(">"))
     return options_list[answer-1]
 
-var_dict = {}
+var_dict = {"test":[0,1],"test2":[1,9]}
 curve_dict = {}
 
 
@@ -140,14 +220,11 @@ curve_dict = {}
 
 
 
-calc = "4^2*(5+(2/3*5))/4"
+#calc = "2*[test]+sqrt([test2])"
+#calc = "4*sqrt(9)+exp(2)"
 print(priority(calc))
 
-print(calculate_formula(priority(calc)))
-
-
-
-
+print(calculate_formula(priority(calc),1,var_dict))
 
 1/0
 
@@ -177,6 +254,7 @@ while True:
                 print("-" + key)
         print("\n")
         
+        print("Pour faire référence à une variable merci de la mettre entre [] (listes des fonctions: cos,sin,exp,sqrt)\n")
         formula_answer = input(">")
         
         if formula_answer == "none":
@@ -196,6 +274,7 @@ while True:
                     pass
         else:
             var_dict[var_name] += [formula_answer]
+            var_dict = calculate_var(var_name,var_dict)
     
     if answer == "éditer une variable":
         print("Liste des variables à éditer:")
@@ -208,22 +287,7 @@ while True:
         selected_var = input(">")
         
         print("Liste des options:")
-        
-        if var_dict[selected_var][0] != "none":
-            answer = menu(["éditer la formule","supprimer la variable","visualiser les donnés","Retour"])
-            if answer == "éditer la formule":
-                print("Ancienne formule:")
-                print(var_dict[selected_var][0])
-                print("Entrez la nouvelle formule:")
-                var_dict[selected_var][0] = input(">")
-            
-            if answer == "supprimer la variable":
-                del var_dict[selected_var]
-                
-            if answer == "visualiser les donnés":
-                for index,value in enumerate(var_dict[selected_var][1:]):
-                    print("("+str(index+1)+") " + str(value))
-        
+
         if var_dict[selected_var][0] == "none":
             answer = menu(["éditer les valeurs","supprimer la variable","visualiser les donnés","Retour"])
             
@@ -233,12 +297,12 @@ while True:
                 
                 print("Numéro du début de la séquence de valeur à éditer: (entrez 'stop' pour arrêter)")
                 
-                index = int(input(">"))-1
+                index = int(input(">"))
                 
                 input_value = "0"
                 
                 while input_value != "stop":
-                    input_value = input("("+str(index+1)+")>")
+                    input_value = input("("+str(index)+")>")
                     
                     try:
                         var_dict[selected_var][index] = int(input_value)
@@ -255,8 +319,27 @@ while True:
             
             if answer == "visualiser les donnés":
                 for index,value in enumerate(var_dict[selected_var][1:]):
-                    print("("+str(index+1)+") " + str(value))
+                    print("("+str(index+1)+") " + str(value))        
+        
+        else:
+            answer = menu(["éditer la formule","supprimer la variable","visualiser les donnés","Retour"])
+            if answer == "éditer la formule":
+                print("Ancienne formule:")
+                print(var_dict[selected_var][0])
+                print("Entrez la nouvelle formule:")
+                var_dict[selected_var][0] = input(">")
             
+            if answer == "supprimer la variable":
+                del var_dict[selected_var]
+                
+            if answer == "visualiser les donnés":
+                for index,value in enumerate(var_dict[selected_var][1:]):
+                    print("("+str(index+1)+") " + str(value))
+        
+
+            
+
+
     if answer == "Configurer le graphique":
         print("ok")
         answer = menu(["Ajouter une courbe","Modéliser une courbe","Retirer une courbe","Configuer les axes","Nom du graphique","Retour"])
@@ -299,7 +382,19 @@ while True:
             else:
                 print("Aucune courbe existante")
                     
+                    
+                    
+                
+                
+        
+            
+        
+    
+        
+    
+    
+
+
 
 
 print(answer)
-
