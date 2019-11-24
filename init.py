@@ -100,7 +100,11 @@ def calculate_formula(formula,data_index,var_dict):
     
     for index,value in enumerate(formula):
         if type(value) == list:
-            formula_bis[index] = calculate_formula(formula[index],data_index,var_dict)
+            answer = calculate_formula(formula[index],data_index,var_dict)
+            if type(answer) == bool:
+                return False
+            else:
+                formula_bis[index] = answer
     
     index_variation = 0
     formula = copy.copy(formula_bis)
@@ -132,11 +136,12 @@ def calculate_formula(formula,data_index,var_dict):
             
             try:
                 formula_bis[index-index_variation] = var_dict[value][data_index]
-
-                print("valide")
                 
             except:
+                print(data_index)
+                print("pas valide")
                 return False
+                
             
         except:
             pass
@@ -197,7 +202,9 @@ def calculate_var(var,var_dict):
     
     var_index = 1
     while type(answer) == float:
+        print("\n")
         answer = calculate_formula(priority(var_dict[var][0]),var_index,var_dict)
+        print(type(answer),answer,"type")
         if type(answer) == float:
             var_dict[var] += [answer]
             var_index += 1
@@ -211,10 +218,8 @@ def menu(options_list):
     answer = int(input(">"))
     return options_list[answer-1]
 
-var_dict = {"test":[0,1],"test2":[1,9]}
+var_dict = {'test': ['none', 1, 2, 3, 4, 5, 6, 7, 8, 9], 'test2': ['none', 5, 4, 1, 2]}
 curve_dict = {}
-
-
 
 
 
@@ -222,11 +227,12 @@ curve_dict = {}
 
 #calc = "2*[test]+sqrt([test2])"
 #calc = "4*sqrt(9)+exp(2)"
-print(priority(calc))
 
-print(calculate_formula(priority(calc),1,var_dict))
+#print(priority(calc))
 
-1/0
+#print(calculate_formula(priority(calc),1,var_dict))
+
+#1/0
 
 
 print("Programme de modélisation de courbes")
@@ -322,7 +328,7 @@ while True:
                     print("("+str(index+1)+") " + str(value))        
         
         else:
-            answer = menu(["éditer la formule","supprimer la variable","visualiser les donnés","Retour"])
+            answer = menu(["éditer la formule","supprimer la variable","Retour"])
             if answer == "éditer la formule":
                 print("Ancienne formule:")
                 print(var_dict[selected_var][0])
@@ -332,9 +338,6 @@ while True:
             if answer == "supprimer la variable":
                 del var_dict[selected_var]
                 
-            if answer == "visualiser les donnés":
-                for index,value in enumerate(var_dict[selected_var][1:]):
-                    print("("+str(index+1)+") " + str(value))
         
 
             
@@ -381,20 +384,34 @@ while True:
             
             else:
                 print("Aucune courbe existante")
-                    
-                    
-                    
-                
-                
         
-            
+        if answer == "Retirer une courbe":
+            print("\nListe des courbes existantes:")
+            for i in curve_dict:
+                print("-"+i)
+            print("\nEntrez le nom d'une courbe à retirer:'")
+            del curve_dict[input(">")]
         
-    
+        if answer == "Configurer les axes":
+            print("Nom de l'axe des x:'")
+            plt.xlabel(input(">"))
+            print("Nom de l'axe des y:'")
+            plt.ylabel(input(">"))
         
-    
-    
+        if answer == "Nom du graphique":
+            print("Nom du graphique:'")
+            plt.title(input(">"))
 
+    if answer == "Afficher le graphique":
+        
+        for curve_i in curve_dict:
+            
+            plt.scatter(var_dict[curve_dict[curve_i][0]][1:],var_dict[curve_dict[curve_i][1]][1:], c = "blue", label = curve_i,marker="x")
+        
+        plt.legend()
+        plt.show()
 
 
 
 print(answer)
+
