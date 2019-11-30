@@ -138,8 +138,6 @@ def calculate_formula(formula,data_index,var_dict):
                 formula_bis[index-index_variation] = var_dict[value][data_index]
                 
             except:
-                print(data_index)
-                print("pas valide")
                 return False
                 
             
@@ -202,9 +200,7 @@ def calculate_var(var,var_dict):
     
     var_index = 1
     while type(answer) == float:
-        print("\n")
         answer = calculate_formula(priority(var_dict[var][0]),var_index,var_dict)
-        print(type(answer),answer,"type")
         if type(answer) == float:
             var_dict[var] += [answer]
             var_index += 1
@@ -218,11 +214,39 @@ def menu(options_list):
     answer = int(input(">"))
     return options_list[answer-1]
 
-var_dict = {'test': ['none', 1, 2, 3, 4, 5, 6, 7, 8, 9], 'test2': ['none', 5, 4, 1, 2]}
+var_dict = {}
 curve_dict = {}
 
 
+def affine_modelisation(var_x,var_y):
+    
+    max_len = min(len(var_x),len(var_y))
+    a = 1
+    b = 0
+    var_x = var_x[:max_len]
+    var_y = var_y[:max_len]
+    detla = -1
+    
+    squared_error_temp = 0
+    for i in range(max_len):
+        squared_error_temp += (var_y[i]-((a)*var_x[i]+b))**2
+    
+    list_param = [[0.01,0.01],[0.01,-0.01],[-0.01,0.01],[-0.01,-0.01],[-0.01,0],[0.01,0],[0,0.01],[0,-0.01]]
+    
+    while detla<0:
+        squared_error = [0,0,0,0,0,0,0,0]
+        for index in range(len(list_param)):
+            for i in range(max_len):
+                squared_error[index] += (var_y[i]-((a+list_param[index][0])*var_x[i]+b+list_param[index][1]))**2
+        detla = min(squared_error)-squared_error_temp
+        if detla<0:
+            a += list_param[squared_error.index(min(squared_error))][0]
+            b += list_param[squared_error.index(min(squared_error))][1]
+            squared_error_temp = min(squared_error)
+        
 
+    return (a,b)
+        
 
 
 #calc = "2*[test]+sqrt([test2])"
@@ -232,8 +256,6 @@ curve_dict = {}
 
 #print(calculate_formula(priority(calc),1,var_dict))
 
-#1/0
-
 
 print("Programme de modélisation de courbes")
 print("Version 1.0")
@@ -242,7 +264,7 @@ print("Version 1.0")
 
 while True:
     
-    answer = menu(["créer une nouvelle variable","éditer une variable","Configurer le graphique","Afficher le graphique","modéliser une courbe"])
+    answer = menu(["créer une nouvelle variable","éditer une variable","Configurer le graphique","Afficher le graphique"])
     
     if answer == "créer une nouvelle variable":
         
@@ -275,7 +297,7 @@ while True:
                 input_value = input("("+str(var_index)+")>")
                 var_index +=1
                 try:
-                    var_dict[var_name] += [int(input_value)]
+                    var_dict[var_name] += [float(input_value)]
                 except:
                     pass
         else:
@@ -311,10 +333,10 @@ while True:
                     input_value = input("("+str(index)+")>")
                     
                     try:
-                        var_dict[selected_var][index] = int(input_value)
+                        var_dict[selected_var][index] = float(input_value)
                     except:
                         try:
-                            var_dict[selected_var] += [int(input_value)]
+                            var_dict[selected_var] += [float(input_value)]
                         except:
                             pass
                     index +=1
@@ -366,6 +388,9 @@ while True:
             curve_var_y = input(">")
             curve_dict[curve_name] += [curve_var_y]
             
+            print("Couleur de la courbe (ex: blue/red/green...)")
+            curve_dict[curve_name] += [input(">")]
+            
         
         
         if answer == "Modéliser une courbe":
@@ -379,7 +404,15 @@ while True:
                 model_used = menu(["Fonction affine"])
                 
                 if model_used == "Fonction affine":
-                    pass
+                    a,b = affine_modelisation(var_dict[curve_dict[modelised_curve][0]][1:],var_dict[curve_dict[modelised_curve][1]][1:])
+                    print("Fonction trouvée:")
+                    print("a=",round(a,2))
+                    print("b=",round(b,2))
+                    #(max(var_dict[curve_dict[modelised_curve][0]][1:])-min(var_dict[curve_dict[modelised_curve][1]][1:]))*50
+                    
+                    x = np.linspace(int(min(var_dict[curve_dict[modelised_curve][0]][1:])), int(max(var_dict[curve_dict[modelised_curve][0]][1:])),int((max(var_dict[curve_dict[modelised_curve][0]][1:])-min(var_dict[curve_dict[modelised_curve][1]][1:]))*50))
+                    
+                    plt.plot(x, a*x+b, label='Model de: '+ modelised_curve)
             
             
             else:
@@ -392,7 +425,7 @@ while True:
             print("\nEntrez le nom d'une courbe à retirer:'")
             del curve_dict[input(">")]
         
-        if answer == "Configurer les axes":
+        if answer == "Configuer les axes":
             print("Nom de l'axe des x:'")
             plt.xlabel(input(">"))
             print("Nom de l'axe des y:'")
@@ -405,13 +438,10 @@ while True:
     if answer == "Afficher le graphique":
         
         for curve_i in curve_dict:
+            max_len = min(len(var_dict[curve_dict[curve_i][0]][1:]),len(var_dict[curve_dict[curve_i][1]][1:]))+1
             
-            plt.scatter(var_dict[curve_dict[curve_i][0]][1:],var_dict[curve_dict[curve_i][1]][1:], c = "blue", label = curve_i,marker="x")
+            plt.scatter(var_dict[curve_dict[curve_i][0]][1:max_len],var_dict[curve_dict[curve_i][1]][1:max_len], c = curve_dict[curve_i][2], label = curve_i,marker="x")
         
         plt.legend()
         plt.show()
-
-
-
-print(answer)
 
