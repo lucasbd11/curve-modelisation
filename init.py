@@ -221,7 +221,7 @@ curve_dict = {}
 def affine_modelisation(var_x,var_y):
     
     max_len = min(len(var_x),len(var_y))
-    a = 1
+    a = (var_y[1]-var_y[0])/(var_x[1]-var_x[0])
     b = 0
     var_x = var_x[:max_len]
     var_y = var_y[:max_len]
@@ -231,10 +231,12 @@ def affine_modelisation(var_x,var_y):
     for i in range(max_len):
         squared_error_temp += (var_y[i]-((a)*var_x[i]+b))**2
     
-    list_param = [[0.01,0.01],[0.01,-0.01],[-0.01,0.01],[-0.01,-0.01],[-0.01,0],[0.01,0],[0,0.01],[0,-0.01]]
+    list_param = [[0.0000001,0.0000001],[0.0000001,-0.0000001],[-0.0000001,0.0000001],[-0.0000001,-0.0000001],[-0.0000001,0],[0.0000001,0],[0,0.0000001],[0,-0.0000001]]
     
     while detla<0:
+        
         squared_error = [0,0,0,0,0,0,0,0]
+        
         for index in range(len(list_param)):
             for i in range(max_len):
                 squared_error[index] += (var_y[i]-((a+list_param[index][0])*var_x[i]+b+list_param[index][1]))**2
@@ -243,11 +245,8 @@ def affine_modelisation(var_x,var_y):
             a += list_param[squared_error.index(min(squared_error))][0]
             b += list_param[squared_error.index(min(squared_error))][1]
             squared_error_temp = min(squared_error)
-        
-
     return (a,b)
         
-
 
 #calc = "2*[test]+sqrt([test2])"
 #calc = "4*sqrt(9)+exp(2)"
@@ -258,7 +257,7 @@ def affine_modelisation(var_x,var_y):
 
 
 print("Programme de modélisation de courbes")
-print("Version 1.0")
+print("Version 1.1")
 
 
 
@@ -406,8 +405,8 @@ while True:
                 if model_used == "Fonction affine":
                     a,b = affine_modelisation(var_dict[curve_dict[modelised_curve][0]][1:],var_dict[curve_dict[modelised_curve][1]][1:])
                     print("Fonction trouvée:")
-                    print("a=",round(a,2))
-                    print("b=",round(b,2))
+                    print("a=", a)
+                    print("b=", b)
                     #(max(var_dict[curve_dict[modelised_curve][0]][1:])-min(var_dict[curve_dict[modelised_curve][1]][1:]))*50
                     
                     x = np.linspace(int(min(var_dict[curve_dict[modelised_curve][0]][1:])), int(max(var_dict[curve_dict[modelised_curve][0]][1:])),int((max(var_dict[curve_dict[modelised_curve][0]][1:])-min(var_dict[curve_dict[modelised_curve][1]][1:]))*50))
@@ -444,4 +443,3 @@ while True:
         
         plt.legend()
         plt.show()
-
